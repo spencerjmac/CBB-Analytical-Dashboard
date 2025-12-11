@@ -1,0 +1,42 @@
+name: Scrape Team Ratings
+
+on:
+  schedule:
+    - cron: '0 4 * * *'  # daily at 04:00 UTC (adjust as needed)
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r scraper/requirements.txt
+          python -m playwright install chromium
+      - name: Run scraper
+        run: |
+          python scraper/scrape_team_ratings.py --once
+      - name: Zip CSV (redundant safety)
+        if: always()
+        run: |
+          python - <<'PY'
+          import os, zipfile
+          p = 'scraper/team_ratings.csv'
+          if os.path.exists(p):
+              with zipfile.ZipFile('scraper/team_ratings.csv.zip','w',compression=zipfile.ZIP_DEFLATED) as z:
+                  z.write(p, arcname='team_ratings.csv')
+          PY
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: team-ratings
+          path: |
+            scraper/team_ratings.csv
+            scraper/team_ratings.db
+            scraper/team_ratings.csv.zip
