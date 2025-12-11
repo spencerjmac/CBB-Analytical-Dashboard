@@ -113,9 +113,9 @@ Tableau Final Project/
 **Export:** `Evan Miya/scraper/team_ratings.csv`
 
 ### Bart Torvik (barttorvik.com)
-**Status:** ⚠️ Intermittent timeouts  
-**Teams:** 365 (when successful)  
-**Update Frequency:** Daily (when site is responsive)  
+**Status:** ✅ Working reliably  
+**Teams:** 365  
+**Update Frequency:** Daily  
 **Key Metrics:**
 - Four Factors (eFG%, TOV%, ORB%, FTRate)
 - Barthag rating
@@ -123,8 +123,6 @@ Tableau Final Project/
 - 25+ statistical categories
 
 **Export:** `Bart Torvik/torvik_tableau.csv`
-
-**Note:** Site may timeout occasionally. Last successful scrape date is retained in CSV.
 
 ### ESPN AP Poll
 **Status:** ✅ One-time scrape  
