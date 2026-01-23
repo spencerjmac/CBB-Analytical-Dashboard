@@ -18,6 +18,27 @@ def clean_percentile_value(val):
     if len(val_str) < 4:
         return val
     
+    # Check if value is already clean (no percentile prefix needed)
+    # Values already in typical ranges don't need cleaning
+    try:
+        val_float = float(val_str.replace('%', ''))
+        # If it's a percentage in 0-150% range, might already be clean
+        if val_str.endswith('%') and 0 <= val_float <= 150:
+            # But percentages like "2347.9%" clearly have prefixes
+            if val_float <= 100 and len(val_str) <= 7:  # e.g., "45.3%" or "99.9%"
+                return val  # Already clean
+        # If it's a non-percentage value in typical basketball ranges, might be clean
+        elif not val_str.endswith('%'):
+            # ORtg/DRtg range: 85-130
+            # PTS/G range: 50-100
+            # Per-game stats: 0-20
+            # If value is in these ranges AND has reasonable length, it might be clean
+            if ((85 <= val_float <= 130 or 50 <= val_float <= 100 or 0 <= val_float <= 20) 
+                and len(val_str) <= 6):  # e.g., "88.1" or "93.9" (not "1199.7")
+                return val  # Already clean
+    except:
+        pass  # Continue with percentile removal logic
+    
     # Pattern 1: "87+17.6" -> "17.6" (for Net Rtg with +)
     match = re.match(r'^(\d{1,3})\+(.+)$', val_str)
     if match and 0 <= int(match.group(1)) <= 100:
@@ -123,41 +144,50 @@ def clean_percentile_value(val):
                 continue
         
         # Choose the best candidate based on expected value ranges
+        # Prioritize by value range, not by number of digits
         if candidates:
-            # For 3-digit values (like "677.4"), strongly prefer 2-digit percentiles
-            digits_before_decimal = len(val_str.split('.')[0]) if '.' in val_str else len(val_str)
-            if digits_before_decimal == 3:
-                for percentile_len, actual_val_str, actual_val in candidates:
-                    if percentile_len == 2:
-                        # This gives us single-digit values (0-9.9)
-                        if '.' in actual_val_str:
-                            parts = actual_val_str.split('.')
-                            parts[0] = parts[0].lstrip('0') or '0'
-                            return '.'.join(parts)
-                        return actual_val_str.lstrip('0') or '0'
+            # Sort candidates by percentile length (shortest first = prefer 1-digit percentiles)
+            candidates_sorted = sorted(candidates, key=lambda x: x[0])
             
-            # For 4+ digit values, check medium/large ranges with longer percentiles
-            for percentile_len, actual_val_str, actual_val in sorted(candidates, key=lambda x: x[0], reverse=True):
-                if 20 < actual_val <= 150:
-                    # Strip leading zeros but keep decimal point intact
+            # First priority: Values in typical ORtg/DRtg range (85-130)
+            # These are the most common large values in basketball stats
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 85 <= actual_val <= 130:
                     if '.' in actual_val_str:
                         parts = actual_val_str.split('.')
                         parts[0] = parts[0].lstrip('0') or '0'
                         return '.'.join(parts)
                     return actual_val_str.lstrip('0') or '0'
             
-            # Check for small per-game stats (0-20)
-            for percentile_len, actual_val_str, actual_val in sorted(candidates, key=lambda x: x[0], reverse=True):
-                if 0 <= actual_val <= 20:
-                    # Strip leading zeros but keep decimal point intact
+            # Second priority: Medium/large ranges (20-85) - typical for PTS/G, per-game stats
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 20 <= actual_val < 85:
                     if '.' in actual_val_str:
                         parts = actual_val_str.split('.')
                         parts[0] = parts[0].lstrip('0') or '0'
                         return '.'.join(parts)
                     return actual_val_str.lstrip('0') or '0'
             
-            # Return smallest value as fallback
-            result = min(candidates, key=lambda x: x[2])[1]
+            # Third priority: Small per-game stats (0-20) - AST/G, REB/G, etc.
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 0 <= actual_val < 20:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Fourth priority: Values over 130 (could be eFG% over 100, or large stats)
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if actual_val > 130:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Fallback: Return first candidate (shortest percentile)
+            result = candidates_sorted[0][1]
             if '.' in result:
                 parts = result.split('.')
                 parts[0] = parts[0].lstrip('0') or '0'
