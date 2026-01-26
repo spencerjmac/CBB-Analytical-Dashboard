@@ -882,3 +882,22 @@ Call log:
 2026-01-21 20:47:04,962 INFO Replaced data in sqlite team_ratings.db table team_ratings (365 rows)
 2026-01-21 20:47:04,985 INFO Zipped CSV to team_ratings.csv.zip
 2026-01-21 20:47:04,986 INFO Scrape complete: 365 rows
+2026-01-25 23:03:38,689 INFO Starting scrape of https://evanmiya.com/?team_ratings
+2026-01-25 23:03:48,261 INFO Waiting for table container to populate with data
+2026-01-25 23:03:50,886 INFO Data rows detected in table
+2026-01-25 23:03:52,952 INFO Pagination info: 1–50 of 365 rows
+2026-01-25 23:03:52,969 INFO Found page size selector; checking available options
+2026-01-25 23:03:52,977 INFO Available page size options: [{'value': '5', 'text': '5'}, {'value': '10', 'text': '10'}, {'value': '25', 'text': '25'}, {'value': '50', 'text': '50'}, {'value': '100', 'text': '100'}, {'value': '500', 'text': '500'}, {'value': '1000', 'text': '1000'}]
+2026-01-25 23:03:52,978 INFO Selecting option: {'value': '1000', 'text': '1000'}
+2026-01-25 23:03:57,203 INFO Selected page size 1000
+2026-01-25 23:03:57,204 INFO Waiting for table container #team_ratings_page-team_ratings
+2026-01-25 23:04:02,381 INFO Found table using selector #team_ratings_page-team_ratings .rt-table
+2026-01-25 23:04:02,382 INFO Extracting rows from table DOM
+2026-01-25 23:04:02,520 INFO Extracted 21 headers and 365 rows
+2026-01-25 23:04:03,989 INFO Normalizing team names...
+2026-01-25 23:04:03,996 INFO Sample before: ['Michigan \U0001f4c9', 'Arizona \U0001f512', 'Duke', 'Michigan State \U0001f525', 'Houston']
+2026-01-25 23:04:03,997 INFO Sample after: ['Michigan', 'Arizona', 'Duke', 'Michigan St.', 'Houston']
+2026-01-25 23:04:04,013 INFO Wrote fresh snapshot CSV (365 rows) to team_ratings.csv
+2026-01-25 23:04:04,063 INFO Replaced data in sqlite team_ratings.db table team_ratings (365 rows)
+2026-01-25 23:04:04,091 INFO Zipped CSV to team_ratings.csv.zip
+2026-01-25 23:04:04,092 INFO Scrape complete: 365 rows
