@@ -2,11 +2,13 @@
 CBB Analytics Scraper
 Scrapes Division I college basketball statistics from cbbanalytics.com
 Requires login credentials in .env file
+Automatically cleans percentile prefixes from scraped data
 """
 
 import os
 import time
 import traceback
+import re
 from datetime import datetime
 from pathlib import Path
 import pandas as pd
@@ -71,6 +73,251 @@ TEAM_NAME_MAPPING = {
     "Wright State": "Wright St.",
     "Youngstown State": "Youngstown St.",
 }
+
+
+def clean_percentile_value(val):
+    """
+    Remove percentile prefix from values
+    CBB Analytics displays percentile rankings alongside actual values,
+    which get scraped as concatenated strings (e.g., "2347.9%" = percentile 23 + actual 47.9%)
+    """
+    if pd.isna(val) or val == '' or val == '-':
+        return val
+    
+    val_str = str(val).strip()
+    
+    if len(val_str) < 4:
+        return val
+    
+    # Check if value is already clean (no percentile prefix needed)
+    # Values already in typical ranges don't need cleaning
+    try:
+        val_float = float(val_str.replace('%', ''))
+        # If it's a percentage in 0-150% range, might already be clean
+        if val_str.endswith('%') and 0 <= val_float <= 150:
+            # But percentages like "2347.9%" clearly have prefixes
+            if val_float <= 100 and len(val_str) <= 7:  # e.g., "45.3%" or "99.9%"
+                return val  # Already clean
+        # If it's a non-percentage value in typical basketball ranges, might be clean
+        elif not val_str.endswith('%'):
+            # ORtg/DRtg range: 85-130
+            # PTS/G range: 50-100
+            # Per-game stats: 0-20
+            # If value is in these ranges AND has reasonable length, it might be clean
+            if ((85 <= val_float <= 130 or 50 <= val_float <= 100 or 0 <= val_float <= 20) 
+                and len(val_str) <= 6):  # e.g., "88.1" or "93.9" (not "1199.7")
+                return val  # Already clean
+    except:
+        pass  # Continue with percentile removal logic
+    
+    # Pattern 1: "87+17.6" -> "17.6" (for Net Rtg with +)
+    match = re.match(r'^(\d{1,3})\+(.+)$', val_str)
+    if match and 0 <= int(match.group(1)) <= 100:
+        return match.group(2)
+    
+    # Pattern 2: "87-17.6" -> "-17.6" (for negative Net Rtg)
+    match = re.match(r'^(\d{1,3})(-\d+\.?\d*)$', val_str)
+    if match and 0 <= int(match.group(1)) <= 100:
+        return match.group(2)
+    
+    # Pattern 3: Percentage values like "2347.9%" or "645.3%" (percentile + percentage)
+    if val_str.endswith('%') and val_str[0].isdigit() and '.' in val_str:
+        candidates = []
+        
+        # Try 1-digit and 2-digit percentiles for percentage values
+        for percentile_len in [1, 2]:
+            if len(val_str) <= percentile_len + 1:
+                continue
+            
+            percentile_str = val_str[:percentile_len]
+            remaining = val_str[percentile_len:]
+            
+            try:
+                percentile = int(percentile_str)
+                if not (0 <= percentile <= 100):
+                    continue
+                
+                actual_val = float(remaining.replace('%', ''))
+                if 0 <= actual_val <= 150:
+                    candidates.append((percentile_len, remaining, actual_val))
+            except:
+                continue
+        
+        if candidates:
+            candidates_sorted = sorted(candidates, key=lambda x: (x[0], -x[2]))
+            
+            # Prefer values in typical percentage range (30-100%)
+            for percentile_len, remaining, actual_val in candidates_sorted:
+                if 30 <= actual_val <= 100:
+                    val_part = remaining.replace('%', '')
+                    if '.' in val_part:
+                        parts = val_part.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        val_part = '.'.join(parts)
+                    return val_part + '%'
+            
+            # If no candidate in typical range, try any value <= 100%
+            for percentile_len, remaining, actual_val in candidates_sorted:
+                if actual_val <= 100:
+                    val_part = remaining.replace('%', '')
+                    if '.' in val_part:
+                        parts = val_part.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        val_part = '.'.join(parts)
+                    return val_part + '%'
+            
+            # Take first candidate (shortest percentile)
+            percentile_len, remaining, actual_val = candidates_sorted[0]
+            val_part = remaining.replace('%', '')
+            if '.' in val_part:
+                parts = val_part.split('.')
+                parts[0] = parts[0].lstrip('0') or '0'
+                val_part = '.'.join(parts)
+            return val_part + '%'
+    
+    # Universal pattern for non-percentage numbers
+    if val_str[0].isdigit() and '.' in val_str and not val_str.endswith('%'):
+        candidates = []
+        
+        # Try all possible percentile lengths (1-3 digits)
+        for percentile_len in [1, 2, 3]:
+            if len(val_str) <= percentile_len:
+                continue
+            
+            percentile_str = val_str[:percentile_len]
+            remaining = val_str[percentile_len:]
+            
+            try:
+                percentile = int(percentile_str)
+                if not (0 <= percentile <= 100):
+                    continue
+                actual_val = float(remaining)
+                candidates.append((percentile_len, remaining, actual_val))
+            except:
+                continue
+        
+        if candidates:
+            candidates_sorted = sorted(candidates, key=lambda x: x[0])
+            
+            # First priority: ORtg/DRtg range (85-130)
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 85 <= actual_val <= 130:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Second priority: Medium/large ranges (20-85)
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 20 <= actual_val < 85:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Third priority: Small per-game stats (0-20)
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if 0 <= actual_val < 20:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Fourth priority: Values over 130
+            for percentile_len, actual_val_str, actual_val in candidates_sorted:
+                if actual_val > 130:
+                    if '.' in actual_val_str:
+                        parts = actual_val_str.split('.')
+                        parts[0] = parts[0].lstrip('0') or '0'
+                        return '.'.join(parts)
+                    return actual_val_str.lstrip('0') or '0'
+            
+            # Fallback: Return first candidate
+            result = candidates_sorted[0][1]
+            if '.' in result:
+                parts = result.split('.')
+                parts[0] = parts[0].lstrip('0') or '0'
+                result = '.'.join(parts)
+            return result
+    
+    return val
+
+
+# KenPom team name mapping for Tableau joins
+KENPOM_TEAM_MAPPING = {
+    'A&M-Corpus Christi': 'Texas A&M Corpus Chris',
+    'Alcorn': 'Alcorn St.',
+    'App State': 'Appalachian St.',
+    'Ark.-Pine Bluff': 'Arkansas Pine Bluff',
+    'Army West Point': 'Army',
+    'Boston U.': 'Boston University',
+    'CSU Bakersfield': 'Cal St. Bakersfield',
+    'California Baptist': 'Cal Baptist',
+    'Central Ark.': 'Central Arkansas',
+    'Central Conn. St.': 'Central Connecticut',
+    'Central Mich.': 'Central Michigan',
+    'Charleston So.': 'Charleston Southern',
+    'Col. of Charleston': 'Charleston',
+    'Detroit': 'Detroit Mercy',
+    'ETSU': 'East Tennessee St.',
+    'Eastern Ill.': 'Eastern Illinois',
+    'Eastern Ky.': 'Eastern Kentucky',
+    'Eastern Mich.': 'Eastern Michigan',
+    'Eastern Wash.': 'Eastern Washington',
+    'FDU': 'Fairleigh Dickinson',
+    'FGCU': 'Florida Gulf Coast',
+    'Fla. Atlantic': 'Florida Atlantic',
+    'Ga. Southern': 'Georgia Southern',
+    'Gardner-Webb': 'Gardner Webb',
+    'Grambling': 'Grambling St.',
+    'LMU (CA)': 'Loyola Marymount',
+    'Lamar University': 'Lamar',
+    'Middle Tenn.': 'Middle Tennessee',
+    'Mississippi Val.': 'Mississippi Valley St.',
+    'N.C. A&T': 'North Carolina A&T',
+    'N.C. Central': 'North Carolina Central',
+    'NC State': 'N.C. State',
+    'NIU': 'Northern Illinois',
+    'North Ala.': 'North Alabama',
+    'Northern Ariz.': 'Northern Arizona',
+    'Northern Colo.': 'Northern Colorado',
+    'Northern Ky.': 'Northern Kentucky',
+    'Ole Miss': 'Mississippi',
+    'Queens (NC)': 'Queens',
+    'SFA': 'Stephen F. Austin',
+    "Saint Mary's (CA)": "Saint Mary's",
+    'Sam Houston': 'Sam Houston St.',
+    'Seattle U': 'Seattle',
+    'South Fla.': 'South Florida',
+    'Southeast Mo. St.': 'Southeast Missouri',
+    'Southeastern La.': 'Southeastern Louisiana',
+    'Southern California': 'USC',
+    'Southern Ill.': 'Southern Illinois',
+    'Southern Ind.': 'Southern Indiana',
+    'Southern Miss.': 'Southern Miss',
+    'Southern U.': 'Southern',
+    "St. John's (NY)": "St. John's",
+    'UAlbany': 'Albany',
+    'UConn': 'Connecticut',
+    'UIC': 'Illinois Chicago',
+    'UIW': 'Incarnate Word',
+    'ULM': 'Louisiana Monroe',
+    'UMES': 'Maryland Eastern Shore',
+    'UNCW': 'UNC Wilmington',
+    'UNI': 'Northern Iowa',
+    'UT Martin': 'Tennessee Martin',
+    'UTRGV': 'UT Rio Grande Valley',
+    'WI Green Bay': 'Green Bay',
+    'West Ga.': 'West Georgia',
+    'Western Caro.': 'Western Carolina',
+    'Western Ill.': 'Western Illinois',
+    'Western Ky.': 'Western Kentucky',
+    'Western Mich.': 'Western Michigan',
+}
+
 
 # Category configurations with required columns
 CATEGORIES = {
@@ -574,8 +821,8 @@ class CBBAnalyticsScraper:
         
         return all_data
     
-    def merge_and_export(self, all_data, output_file="cbb_analytics_tableau.csv"):
-        """Merge all category DataFrames and export to CSV"""
+    def merge_and_export(self, all_data, output_file="cbb_analytics_tableau_cleaned.csv"):
+        """Merge all category DataFrames, clean data (remove percentile prefixes), and export to CSV"""
         if not all_data:
             print("\n⚠️  No data to export")
             return
@@ -612,6 +859,41 @@ class CBBAnalyticsScraper:
             print("  ❌ No data to merge")
             return
         
+        print("\n" + "="*70)
+        print("Cleaning data (removing percentile prefixes)...")
+        print("="*70)
+        
+        # Apply cleaning to all numeric columns
+        numeric_cols = []
+        for col in merged_df.columns:
+            if col not in ['team_kenpom', 'Record', 'Conf_Record', 'GP']:
+                # Check if column has numeric-like values
+                sample = merged_df[col].dropna().head(5)
+                if len(sample) > 0:
+                    try:
+                        # Try to convert to string and check if it looks numeric
+                        str_val = str(sample.iloc[0])
+                        if any(c.isdigit() for c in str_val):
+                            numeric_cols.append(col)
+                    except:
+                        pass
+        
+        print(f"  Cleaning {len(numeric_cols)} columns...")
+        
+        # Apply cleaning function to numeric columns
+        for col in numeric_cols:
+            merged_df[col] = merged_df[col].apply(clean_percentile_value)
+        
+        print(f"  ✓ Cleaned all numeric values")
+        
+        # Add KenPom team name mapping for Tableau joins
+        print("\nAdding KenPom team name mapping...")
+        merged_df['kenpom_team_name'] = merged_df['team_kenpom'].apply(
+            lambda x: KENPOM_TEAM_MAPPING.get(x, x)
+        )
+        mapped_count = (merged_df['kenpom_team_name'] != merged_df['team_kenpom']).sum()
+        print(f"  ✓ Mapped {mapped_count} team names for KenPom compatibility")
+        
         # Add metadata
         merged_df['scrape_date'] = datetime.now().strftime('%Y-%m-%d')
         merged_df['scrape_timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -620,10 +902,18 @@ class CBBAnalyticsScraper:
         # Sort by team name
         merged_df = merged_df.sort_values('team_kenpom')
         
-        # Export
+        # Export - default to cleaned file
         merged_df.to_csv(output_file, index=False)
-        print(f"\n✓ Exported {len(merged_df)} teams to {output_file}")
-        print(f"  Total columns: {len(merged_df.columns)}")
+        
+        print("\n" + "="*70)
+        print(f"✓ Exported cleaned data: {output_file}")
+        print("="*70)
+        print(f"  Teams: {len(merged_df)}")
+        print(f"  Columns: {len(merged_df.columns)}")
+        print(f"  All percentile prefixes removed")
+        print(f"  KenPom team names added")
+        print(f"  Ready for Tableau!")
+        print("="*70)
 
 
 def main():
