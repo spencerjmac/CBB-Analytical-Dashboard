@@ -710,7 +710,7 @@ class CBBAnalyticsScraper:
         
         return df
     
-    def merge_and_export(self, all_data: Dict[str, pd.DataFrame], output_file: str = 'cbb_analytics_tableau.csv'):
+    def merge_and_export(self, all_data: Dict[str, pd.DataFrame], output_file: str = 'cbb_analytics_tableau_cleaned.csv'):
         """
         Merge all category data and export to CSV for Tableau.
         
