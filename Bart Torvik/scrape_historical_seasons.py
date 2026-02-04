@@ -14,26 +14,26 @@ from datetime import datetime
 class HistoricalSeasonScraper:
     """Scraper for full historical season data from Bart Torvik."""
     
-    # Pre-tournament dates for each year (Early March before conference tournaments end)
+    # Selection Sunday dates for each year (pre-tournament)
     SELECTION_SUNDAY_DATES = {
-        2008: "20080301",  # March 1, 2008 (Before conference tournaments)
-        2009: "20090301",  # March 1, 2009
-        2010: "20100301",  # March 1, 2010
-        2011: "20110301",  # March 1, 2011
-        2012: "20120301",  # March 1, 2012
-        2013: "20130301",  # March 1, 2013
-        2014: "20140301",  # March 1, 2014
-        2015: "20150301",  # March 1, 2015
-        2016: "20160301",  # March 1, 2016
-        2017: "20170301",  # March 1, 2017
-        2018: "20180301",  # March 1, 2018
-        2019: "20190301",  # March 1, 2019
+        2008: "20080316",  # March 16, 2008
+        2009: "20090315",  # March 15, 2009
+        2010: "20100314",  # March 14, 2010
+        2011: "20110313",  # March 13, 2011
+        2012: "20120311",  # March 11, 2012
+        2013: "20130317",  # March 17, 2013
+        2014: "20140316",  # March 16, 2014
+        2015: "20150315",  # March 15, 2015
+        2016: "20160313",  # March 13, 2016
+        2017: "20170312",  # March 12, 2017
+        2018: "20180311",  # March 11, 2018
+        2019: "20190317",  # March 17, 2019
         # No 2020 tournament
-        2021: "20210301",  # March 1, 2021
-        2022: "20220301",  # March 1, 2022
-        2023: "20230301",  # March 1, 2023
-        2024: "20240301",  # March 1, 2024
-        2025: "20250301",  # March 1, 2025
+        2021: "20210314",  # March 14, 2021
+        2022: "20220313",  # March 13, 2022
+        2023: "20230312",  # March 12, 2023
+        2024: "20240317",  # March 17, 2024
+        2025: "20250316",  # March 16, 2025
     }
     
     def __init__(self):
@@ -116,10 +116,9 @@ class HistoricalSeasonScraper:
             print(f"  Skipping {year}: No pre-tournament date available")
             return []
         
-        # Bart Torvik URL with year parameter
-        # Use type=reg to get regular season + conference tournament data (excludes NCAA tournament)
-        # Note: date parameter doesn't work for historical seasons, but type=reg filters properly
-        url = f"{self.rankings_url}?year={year}&type=reg"
+        # Bart Torvik URL with year and end date
+        # Using 'end' parameter to get data through Selection Sunday (pre-tournament)
+        url = f"{self.rankings_url}?year={year}&end={selection_sunday}"
         
         should_close = False
         if browser is None:
@@ -132,7 +131,7 @@ class HistoricalSeasonScraper:
             
             page = browser.new_page()
             
-            print(f"  Fetching ALL teams for {year} season (Pre-NCAA Tournament: type=reg)...")
+            print(f"  Fetching ALL teams for {year} season (Selection Sunday {selection_sunday})...")
             page.goto(url, wait_until='domcontentloaded', timeout=90000)
             
             # Wait for the main table to load

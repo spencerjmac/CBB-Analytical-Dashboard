@@ -103,9 +103,11 @@ def clean_percentile_value(val):
             # ORtg/DRtg range: 85-130
             # PTS/G range: 50-100
             # Per-game stats: 0-20
-            # If value is in these ranges AND has reasonable length, it might be clean
-            if ((85 <= val_float <= 130 or 50 <= val_float <= 100 or 0 <= val_float <= 20) 
-                and len(val_str) <= 6):  # e.g., "88.1" or "93.9" (not "1199.7")
+            # If value is in these ranges AND has reasonable length AND no leading zeros, it might be clean
+            has_leading_zero = val_str[0] == '0' and len(val_str) > 3  # "093.6" or "0130.4"
+            if (not has_leading_zero and
+                (85 <= val_float <= 130 or 50 <= val_float <= 100 or 0 <= val_float <= 20) 
+                and len(val_str) <= 6):  # e.g., "88.1" or "93.9" (not "1199.7" or "093.6")
                 return val  # Already clean
     except:
         pass  # Continue with percentile removal logic
@@ -177,6 +179,23 @@ def clean_percentile_value(val):
     
     # Universal pattern for non-percentage numbers
     if val_str[0].isdigit() and '.' in val_str and not val_str.endswith('%'):
+        # CHECK IF ALREADY CLEAN FIRST
+        try:
+            current_val = float(val_str)
+            # If value is already in expected ranges and short enough, it's probably clean
+            # BUT: Check for leading zeros (e.g., "0130.4") or values that are too long
+            # Clean values should be like "130.4" (5 chars), not "0130.4" (6 chars with leading 0)
+            has_leading_zero = val_str[0] == '0' and len(val_str) > 4  # "0130.4" has leading 0
+            if not has_leading_zero and current_val < 150 and len(val_str) <= 6:
+                # ORtg/DRtg range (85-135)
+                if 85 <= current_val <= 135:
+                    return val
+                # PTS/G, assists, rebounds, etc. range (0-85)
+                if 0 <= current_val < 85:
+                    return val
+        except:
+            pass
+        
         candidates = []
         
         # Try all possible percentile lengths (1-3 digits)
@@ -199,9 +218,9 @@ def clean_percentile_value(val):
         if candidates:
             candidates_sorted = sorted(candidates, key=lambda x: x[0])
             
-            # First priority: ORtg/DRtg range (85-130)
+            # First priority: ORtg/DRtg range (85-135) - extended to 135 to catch outliers
             for percentile_len, actual_val_str, actual_val in candidates_sorted:
-                if 85 <= actual_val <= 130:
+                if 85 <= actual_val <= 135:
                     if '.' in actual_val_str:
                         parts = actual_val_str.split('.')
                         parts[0] = parts[0].lstrip('0') or '0'
@@ -885,6 +904,41 @@ class CBBAnalyticsScraper:
             merged_df[col] = merged_df[col].apply(clean_percentile_value)
         
         print(f"  ✓ Cleaned all numeric values")
+        
+        print("\n" + "="*70)
+        print("Cleaning column names...")
+        print("="*70)
+        
+        # Remove category prefixes from column names
+        # e.g., "traditional_boxscore_PTS/G" -> "PTS/G"
+        rename_dict = {}
+        for col in merged_df.columns:
+            if col not in ['team_kenpom', 'kenpom_team_name', 'scrape_date', 'scrape_timestamp', 'season_id']:
+                # Split by underscore and take the last part as the clean name
+                # Handle cases like "traditional_boxscore_Traditional Box Score_PTS/G" -> "PTS/G"
+                parts = col.split('_')
+                clean_name = parts[-1]  # Get the last part (the actual stat name)
+                
+                # If we already have this column name, append a number to avoid duplicates
+                if clean_name in rename_dict.values():
+                    counter = 2
+                    while f"{clean_name}_{counter}" in rename_dict.values():
+                        counter += 1
+                    clean_name = f"{clean_name}_{counter}"
+                
+                rename_dict[col] = clean_name
+        
+        merged_df = merged_df.rename(columns=rename_dict)
+        print(f"  ✓ Cleaned {len(rename_dict)} column names")
+        
+        print("\nRemoving null columns...")
+        # Remove columns that are completely null
+        null_cols = merged_df.columns[merged_df.isnull().all()].tolist()
+        if null_cols:
+            merged_df = merged_df.drop(columns=null_cols)
+            print(f"  ✓ Removed {len(null_cols)} completely null columns")
+        else:
+            print(f"  ✓ No null columns to remove")
         
         # Add KenPom team name mapping for Tableau joins
         print("\nAdding KenPom team name mapping...")
