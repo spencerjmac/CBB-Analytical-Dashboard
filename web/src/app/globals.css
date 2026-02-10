@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import KaTeX CSS for math rendering */
+@import 'katex/dist/katex.min.css';
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-ibm-plex-mono: 'IBM Plex Mono', monospace;
+}
+
+body {
+  color: theme('colors.text.primary');
+  background: theme('colors.ui.bg');
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .stat-number {
+    @apply font-mono text-sm;
+  }
+  
+  .table-header {
+    @apply font-medium text-text-muted uppercase text-xs tracking-wide;
+  }
+}
+
+/* Table styling for rankings */
+.rankings-table {
+  @apply w-full border-collapse;
+}
+
+.rankings-table th {
+  @apply table-header bg-ui-surface sticky top-0 px-3 py-2 text-left border-b border-ui-border;
+}
+
+.rankings-table td {
+  @apply px-3 py-2 text-sm border-b border-ui-border;
+}
+
+.rankings-table tbody tr:hover {
+  @apply bg-ui-surface;
+}
+
+/* Loading skeleton */
+.skeleton {
+  @apply animate-pulse bg-ui-surface rounded;
+}

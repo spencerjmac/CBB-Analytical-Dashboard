@@ -1,0 +1,22 @@
+{
+  "Michigan": { "slug": "michigan", "display": "Michigan", "aliases": ["Michigan"] },
+  "Arizona": { "slug": "arizona", "display": "Arizona", "aliases": ["Arizona"] },
+  "Duke": { "slug": "duke", "display": "Duke", "aliases": ["Duke"] },
+  "Houston": { "slug": "houston", "display": "Houston", "aliases": ["Houston"] },
+  "Illinois": { "slug": "illinois", "display": "Illinois", "aliases": ["Illinois"] },
+  "Florida": { "slug": "florida", "display": "Florida", "aliases": ["Florida"] },
+  "Alabama": { "slug": "alabama", "display": "Alabama", "aliases": ["Alabama"] },
+  "Kentucky": { "slug": "kentucky", "display": "Kentucky", "aliases": ["Kentucky"] },
+  "Marquette": { "slug": "marquette", "display": "Marquette", "aliases": ["Marquette"] },
+  "Purdue": { "slug": "purdue", "display": "Purdue", "aliases": ["Purdue"] },
+  "Auburn": { "slug": "auburn", "display": "Auburn", "aliases": ["Auburn"] },
+  "Kansas": { "slug": "kansas", "display": "Kansas", "aliases": ["Kansas"] },
+  "North Carolina": { "slug": "north-carolina", "display": "North Carolina", "aliases": ["North Carolina", "UNC"] },
+  "Wisconsin": { "slug": "wisconsin", "display": "Wisconsin", "aliases": ["Wisconsin"] },
+  "Connecticut": { "slug": "connecticut", "display": "Connecticut", "aliases": ["Connecticut", "UConn"] },
+  "Tennessee": { "slug": "tennessee", "display": "Tennessee", "aliases": ["Tennessee"] },
+  "Texas A&M": { "slug": "texas-am", "display": "Texas A&M", "aliases": ["Texas A&M", "Texas A&amp;M"] },
+  "Gonzaga": { "slug": "gonzaga", "display": "Gonzaga", "aliases": ["Gonzaga"] },
+  "Iowa State": { "slug": "iowa-state", "display": "Iowa State", "aliases": ["Iowa State"] },
+  "Mississippi St.": { "slug": "mississippi-state", "display": "Mississippi State", "aliases": ["Mississippi St.", "Mississippi State", "Miss St", "Miss. St."] }
+}

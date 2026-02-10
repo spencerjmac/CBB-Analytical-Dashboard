@@ -1,17 +1,45 @@
-# College Basketball Analytics - Tableau Final Project
+# 🏀 College Basketball Analytics - Web Application
 
-A comprehensive data collection system for college basketball analytics, aggregating data from multiple sources (KenPom, Evan Miya, Bart Torvik, ESPN AP Poll) for Tableau visualization and analysis.
+## 🎉 Now with Production-Ready Web App!
 
-## 📊 Project Overview
+This repository includes a **full-stack web application** that transforms your scraped data into an interactive analytics platform. Think KenPom meets FiveThirtyEight.
 
-This project scrapes and normalizes NCAA Division I men's basketball data from four major sources:
+### Quick Links
+- **Web App**: [web/README.md](web/README.md)
+- **Implementation Guide**: [IMPLEMENTATION.md](IMPLEMENTATION.md)
+- **Live Demo**: (Deploy to Vercel)
 
-- **KenPom** - Adjusted efficiency metrics, tempo, luck ratings
-- **Evan Miya** - Advanced team ratings and performance metrics
-- **Bart Torvik (T-Rank)** - Four Factors analysis and comprehensive statistics
-- **ESPN AP Poll** - Weekly Associated Press rankings
+---
 
-All data sources provide metrics for **365 NCAA Division I teams** with normalized team names for seamless cross-dataset analysis in Tableau.
+## 📊 What's Included
+
+### Web Application (`/web`)
+A Next.js 14 application with TypeScript and Tailwind CSS featuring:
+
+**5 Core Pages:**
+1. **Rankings** - Sortable table with 365 D1 teams
+2. **Team Profiles** - Detailed pages with 5 tabs
+3. **Matchup Tool** - Head-to-head comparison
+4. **Glossary** - Metric definitions with LaTeX
+5. **About** - Data sources and methodology
+
+**4 Visualizations:**
+- Trapezoid of Excellence ✅
+- Efficiency Landscape (coming soon)
+- Kill Shot Analysis (coming soon)
+- Crystal Ball Predictor (coming soon)
+
+### Data Pipeline (`/scripts`)
+Unified data pipeline that merges KenPom, Torvik, and CBB Analytics CSVs.
+
+### Original Scraping Scripts
+Comprehensive data collection from four major sources:
+- **KenPom** - Adjusted efficiency metrics
+- **Bart Torvik** - Four Factors analysis  
+- **CBB Analytics** - Advanced ratings
+- **ESPN AP Poll** - Weekly rankings
+
+All data sources provide metrics for **365 NCAA Division I teams**.
 
 ## 🚀 Quick Start
 
