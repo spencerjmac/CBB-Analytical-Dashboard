@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #ED713A;
+  --primary-dark: #D85F2A;
+  --blue: #30A2DA;
+  --blue-dark: #2080B0;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* Stats table styling */
+.stats-table {
+  @apply w-full border-collapse;
+}
+
+.stats-table th {
+  @apply bg-gray-100 px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider;
+}
+
+.stats-table td {
+  @apply px-4 py-3 text-sm border-b border-gray-200;
+}
+
+.stats-table tbody tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Mono font for numbers */
+.mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Rank badge */
+.rank-badge {
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white font-bold text-sm;
+}
+
+/* Loading spinner */
+.spinner {
+  @apply animate-spin rounded-full border-4 border-gray-200 border-t-primary;
+}
