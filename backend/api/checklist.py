@@ -389,9 +389,9 @@ def _check_ap_poll_week6(team_stats: TeamSeasonStats) -> Dict[str, Any]:
 
 
 def _check_efg_margin(team_stats: TeamSeasonStats) -> Dict[str, Any]:
-    """Check eFG Margin >= 2.798"""
+    """Check eFG Margin >= 6.0"""
     efg_margin = team_stats.efg_margin
-    threshold = 2.798
+    threshold = 6.0
     passes = efg_margin >= threshold
     
     return {
@@ -399,15 +399,15 @@ def _check_efg_margin(team_stats: TeamSeasonStats) -> Dict[str, Any]:
         "label": "eFG Margin",
         "pass": passes,
         "value": f"{efg_margin:.3f}",
-        "threshold": "≥ 2.798",
+        "threshold": "≥ 6.0",
         "details": f"eFG Margin: {efg_margin:.3f}"
     }
 
 
 def _check_ftr_margin(team_stats: TeamSeasonStats) -> Dict[str, Any]:
-    """Check FTR Margin >= -7.31"""
+    """Check FTR Margin >= -5.5"""
     ftr_margin = team_stats.ftr_margin
-    threshold = -7.31
+    threshold = -5.5
     passes = ftr_margin >= threshold
     
     return {
@@ -415,7 +415,7 @@ def _check_ftr_margin(team_stats: TeamSeasonStats) -> Dict[str, Any]:
         "label": "FTR Margin",
         "pass": passes,
         "value": f"{ftr_margin:.2f}",
-        "threshold": "≥ -7.31",
+        "threshold": "≥ -5.5",
         "details": f"FTR Margin: {ftr_margin:.2f}"
     }
 
@@ -437,9 +437,9 @@ def _check_rebounding_edge(team_stats: TeamSeasonStats) -> Dict[str, Any]:
 
 
 def _check_turnover_edge(team_stats: TeamSeasonStats) -> Dict[str, Any]:
-    """Check Turnover Edge >= 0.6"""
+    """Check Turnover Edge >= 1.5"""
     to_edge = team_stats.tov_edge
-    threshold = 0.6
+    threshold = 1.5
     passes = to_edge >= threshold
     
     return {
@@ -447,13 +447,13 @@ def _check_turnover_edge(team_stats: TeamSeasonStats) -> Dict[str, Any]:
         "label": "Turnover Edge",
         "pass": passes,
         "value": f"{to_edge:.2f}",
-        "threshold": "≥ 0.6",
+        "threshold": "≥ 1.5",
         "details": f"Turnover Edge: {to_edge:.2f}"
     }
 
 
 def _check_four_factor_index(team_stats: TeamSeasonStats) -> Dict[str, Any]:
-    """Check Four Factor Index > 68.7"""
+    """Check Four Factor Index > 80.0"""
     ffi = team_stats.four_factor_index_100
     
     if ffi is None:
@@ -462,11 +462,11 @@ def _check_four_factor_index(team_stats: TeamSeasonStats) -> Dict[str, Any]:
             "label": "Four Factor Index",
             "pass": False,
             "value": "N/A",
-            "threshold": "> 68.7",
+            "threshold": "> 80.0",
             "details": "Four Factor Index unavailable"
         }
     
-    threshold = 68.7
+    threshold = 80.0
     passes = ffi > threshold
     
     return {
@@ -474,7 +474,7 @@ def _check_four_factor_index(team_stats: TeamSeasonStats) -> Dict[str, Any]:
         "label": "Four Factor Index",
         "pass": passes,
         "value": f"{ffi:.1f}",
-        "threshold": "> 68.7",
+        "threshold": "> 80.0",
         "details": f"Four Factor Index: {ffi:.1f}"
     }
 
